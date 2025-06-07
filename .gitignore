@@ -1,0 +1,75 @@
+
+# Python
+
+pycache/
+
+*.pyc
+
+*.pyo
+
+*.pyd
+
+.Python
+
+*.so
+
+# Virtual Environment
+
+venv/
+
+env/
+
+ENV/
+
+# Docker
+
+.docker/
+
+# YOLO Models (büyük dosyalar)
+
+*.pt
+
+yolov8m-pose.pt
+
+# IDE
+
+.vscode/
+
+.idea/
+
+*.swp
+
+*.swo
+
+# macOS
+
+.DS_Store
+
+.AppleDouble
+
+.LSOverride
+
+# Logs
+
+*.log
+
+logs/
+
+# Database
+
+*.db
+
+*.sqlite3
+
+# Environment variables
+
+.env
+
+.env.local
+
+# Temporary files
+
+*.tmp
+
+*.temp
+

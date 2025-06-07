@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: climbing_mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: smartcampus
+      MYSQL_DATABASE: climbing_system
+      MYSQL_USER: climbing_project
+      MYSQL_PASSWORD: smartcampus
+    ports:
+      - "3307:3306"
+    restart: unless-stopped
+
+  climbing_server:
+    build: .
+    container_name: climbing_server
+    depends_on:
+      - mysql
+    ports:
+      - "5000:5000"
+      - "8080:8080"
+    environment:
+      - MYSQL_HOST=mysql
+    restart: unless-stopped
