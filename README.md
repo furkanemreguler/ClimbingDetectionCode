@@ -1,12 +1,13 @@
 # 🧗‍♂️ Real-Time Climbing Detection System
 
-A hybrid Docker-based system that uses YOLO pose estimation to detect climbing movements in real-time through webcam feed. The system provides instant notifications through a GUI interface and stores detection events in a MySQL database.
+A hybrid Docker-based system that uses YOLO pose estimation to detect climbing movements in real-time through webcam feed. The system provides instant notifications through a modern web-based GUI interface and stores detection events in a MySQL database.
 
 ## 🎯 Features
 
 - **Real-time Climbing Detection**: Uses YOLOv8 pose estimation to analyze knee angles and detect climbing movements
 - **Live Camera Feed**: Direct webcam access for real-time monitoring
-- **Instant Notifications**: GUI-based alert system with real-time logging
+- **Web-based GUI**: Modern browser-based alert system with real-time logging and WebSocket integration
+- **Real-time Notifications**: Instant alerts displayed in web interface with live updates
 - **Database Storage**: MySQL database for storing detection events and statistics
 - **Hybrid Architecture**: Optimized for macOS with host-based detection and containerized services
 - **Auto-launcher**: Single command to start the entire system
@@ -16,11 +17,13 @@ A hybrid Docker-based system that uses YOLO pose estimation to detect climbing m
 
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Host System   │    │   GUI Server    │    │  Docker MySQL   │
-│                 │    │   (Port 5001)   │    │   (Port 3307)   │
-│ • Webcam Access │───▶│ • Alert Display │◄───│ • Event Storage │
+│   Host System   │    │   Web GUI       │    │  Docker MySQL   │
+│                 │    │   (Port 5002)   │    │   (Port 3307)   │
+│ • Webcam Access │───▶│ • Web Interface │◄───│ • Event Storage │
 │ • YOLO Model    │    │ • Real-time Log │    │ • Statistics    │
-│ • Detection     │    │ • Notifications │    │ • Data Persist  │
+│ • Detection     │    │ • WebSocket     │    │ • Data Persist  │
+│                 │    │ • Socket Server │    │                 │
+│                 │    │   (Port 5001)   │    │                 │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
 ```
 
@@ -33,6 +36,7 @@ A hybrid Docker-based system that uses YOLO pose estimation to detect climbing m
 - **Python 3.9+** with pip
 - **Webcam** access permissions
 - **8GB+ RAM** recommended for YOLO model
+- **Modern web browser** (Chrome, Firefox, Safari)
 
 ### Installation
 
@@ -57,6 +61,12 @@ docker-compose up -d
 python3 start_system.py
 ```
 
+5. **Open Web GUI**
+```bash
+# Web interface will automatically open at:
+# http://localhost:5002
+```
+
 ## 📁 Project Structure
 
 ```
@@ -67,13 +77,25 @@ climbing-detection-system/
 ├── requirements.txt         # Python dependencies
 ├── start_system.py         # Auto-launcher script
 ├── live_detector.py        # Main detection engine
-├── climbing_server.py      # GUI notification server
+├── climbing_server.py      # Web GUI server with WebSocket
 ├── climbing_client.py      # Communication client
 ├── alert_utils.py          # Database and email utilities
 └── controller.py           # Legacy controller (deprecated)
 ```
 
 ## ⚙️ Configuration
+
+### Web GUI Configuration
+
+Edit `climbing_server.py` to customize web interface:
+
+```python
+# Web server settings
+WEB_HOST = '127.0.0.1'       # Web interface host
+WEB_PORT = 5002              # Web interface port
+SOCKET_PORT = 5001           # Internal socket port
+MESSAGE_LIMIT = 100          # Maximum messages to display
+```
 
 ### Detection Parameters
 
@@ -125,6 +147,21 @@ python3 climbing_server.py &
 python3 live_detector.py
 ```
 
+### Accessing the Web Interface
+
+1. **Open your web browser**
+2. **Navigate to**: `http://localhost:5002`
+3. **Monitor real-time alerts** in the web interface
+4. **View live connection status** (🟢 Connected / 🔴 Disconnected)
+
+### Web Interface Features
+
+- **Real-time Alert Display**: Live climbing detection notifications
+- **Message History**: Last 100 detection events with timestamps
+- **Connection Status**: Visual indicator of system connectivity
+- **Auto-scroll**: Automatic scrolling to latest messages
+- **Dark Theme**: Modern dark interface for better visibility
+
 ### Stopping the System
 
 ```bash
@@ -139,7 +176,7 @@ pkill -f "python3 live_detector.py"
 
 ### Monitoring
 
-- **GUI Interface**: Automatic popup window showing real-time alerts
+- **Web Interface**: Real-time alerts at `http://localhost:5002`
 - **Terminal Logs**: Detection events logged in the terminal
 - **Database**: Events stored in MySQL for historical analysis
 
@@ -157,15 +194,48 @@ pkill -f "python3 live_detector.py"
 # macOS Settings → Privacy & Security → Camera → Terminal ✅
 ```
 
-#### 2. Port Already in Use
+#### 2. Web Interface Not Loading
+
+**Problem**: Cannot access `http://localhost:5002`
+
+**Solutions**:
+```bash
+# Check if web server is running
+ps aux | grep climbing_server
+
+# Check port availability
+lsof -i :5002
+lsof -i :5001
+
+# Restart web server
+pkill -f climbing_server
+python3 climbing_server.py
+```
+
+#### 3. WebSocket Connection Issues
+
+**Problem**: Web interface shows "🔴 Bağlantı Kesildi"
+
+**Solution**:
+```bash
+# Check socket server status
+netstat -an | grep 5001
+
+# Restart the climbing server
+pkill -f climbing_server
+python3 climbing_server.py
+```
+
+#### 4. Port Already in Use
 
 **Problem**: `OSError: [Errno 48] Address already in use`
 
 **Solutions**:
 ```bash
-# Check what's using the port
-lsof -i :5001
-lsof -i :3307
+# Check what's using the ports
+lsof -i :5001  # Socket server
+lsof -i :5002  # Web interface
+lsof -i :3307  # MySQL
 
 # Kill conflicting processes
 docker-compose down
@@ -174,7 +244,7 @@ pkill -f "python3 climbing_server.py"
 # Or change ports in configuration files
 ```
 
-#### 3. Docker Connection Issues
+#### 5. Docker Connection Issues
 
 **Problem**: `Cannot connect to Docker daemon`
 
@@ -187,7 +257,7 @@ open -a Docker
 docker ps
 ```
 
-#### 4. YOLO Model Download Issues
+#### 6. YOLO Model Download Issues
 
 **Problem**: Model fails to download or load
 
@@ -201,7 +271,7 @@ python3 -c "from ultralytics import YOLO; YOLO('yolov8m-pose.pt')"
 rm -rf ~/.cache/ultralytics/
 ```
 
-#### 5. MySQL Connection Failed
+#### 7. MySQL Connection Failed
 
 **Problem**: `[DB Error] Can't connect to MySQL server`
 
@@ -215,24 +285,23 @@ docker logs climbing_mysql
 docker-compose restart mysql
 
 # Verify port configuration
-# Check if port 3307 is available
 lsof -i :3307
 ```
 
-#### 6. GUI Not Appearing
+#### 8. Web Interface Not Updating
 
-**Problem**: Detection works but no GUI window
+**Problem**: Detection works but web interface doesn't show alerts
 
 **Solution**:
 ```bash
-# Check if Tkinter is installed
-python3 -c "import tkinter"
+# Check Flask-SocketIO installation
+pip3 install flask-socketio
 
-# Install Tkinter if missing (macOS)
-brew install python-tk
+# Verify socket communication
+python3 -c "import socket; s=socket.socket(); s.connect(('127.0.0.1', 5001)); print('Socket OK')"
 
-# Check GUI process
-ps aux | grep climbing_server
+# Check browser console for WebSocket errors
+# Open browser dev tools → Console tab
 ```
 
 ### Performance Issues
@@ -255,6 +324,16 @@ top -p $(pgrep -f live_detector)
 python3 start_system.py
 ```
 
+#### Web Interface Slow
+```bash
+# Reduce message history
+# Edit climbing_server.py:
+MESSAGE_LIMIT = 50  # Reduce from 100
+
+# Clear browser cache
+# Hard refresh: Cmd+Shift+R (macOS)
+```
+
 ## 🧪 Testing
 
 ### Test Camera Access
@@ -267,11 +346,27 @@ python3 -c "import cv2; cap = cv2.VideoCapture(0); print('Camera OK:', cap.isOpe
 python3 -c "from alert_utils import init_db; init_db()"
 ```
 
+### Test Web Interface
+```bash
+# Start only web server
+python3 climbing_server.py
+# Open http://localhost:5002 in browser
+```
+
+### Test WebSocket Connection
+```bash
+# Check WebSocket in browser console:
+# Open http://localhost:5002
+# Press F12 → Console
+# Look for WebSocket connection messages
+```
+
 ### Test Detection Manually
 ```bash
 # Run detector only
 python3 live_detector.py
 # Perform climbing movements in front of camera
+# Check web interface for alerts
 ```
 
 ## 📊 System Requirements
@@ -282,6 +377,7 @@ python3 live_detector.py
 - **CPU**: Dual-core 2.0GHz
 - **Storage**: 2GB free space
 - **Camera**: Built-in or USB webcam
+- **Browser**: Chrome 60+, Firefox 55+, Safari 12+
 
 ### Recommended Requirements
 - **OS**: macOS 12.0+
@@ -289,6 +385,28 @@ python3 live_detector.py
 - **CPU**: Quad-core 2.5GHz+
 - **Storage**: 5GB free space
 - **Camera**: HD webcam (1080p)
+- **Browser**: Latest Chrome, Firefox, or Safari
+
+## 🌐 Web Interface Details
+
+### Features
+- **Real-time Updates**: WebSocket-based live alert system
+- **Message History**: Displays last 100 detection events
+- **Timestamps**: Each alert includes precise time information
+- **Connection Status**: Visual indicator of system health
+- **Responsive Design**: Works on desktop and mobile browsers
+- **Dark Theme**: Professional dark interface
+
+### Ports Used
+- **5002**: Web interface (HTTP)
+- **5001**: Internal socket server
+- **3307**: MySQL database
+
+### Browser Compatibility
+- ✅ Chrome 60+
+- ✅ Firefox 55+
+- ✅ Safari 12+
+- ✅ Edge 79+
 
 ## 🤝 Contributing
 
@@ -307,27 +425,40 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 If you encounter issues not covered in this README:
 
 1. **Check the troubleshooting section** above
-2. **Review container logs**: `docker logs climbing_mysql` and `docker logs climbing_server`
+2. **Review logs**: 
+   - Container logs: `docker logs climbing_mysql`
+   - Web server logs: Check terminal running `climbing_server.py`
+   - Browser console: Press F12 in web interface
 3. **Open an issue** on GitHub with:
    - Your macOS version
+   - Browser version
    - Error messages
    - Steps to reproduce
    - Log outputs
 
 ## 🏷️ Version
 
-**Current Version**: 1.0.0
+**Current Version**: 2.0.0
 
 ### Recent Updates
-- ✅ Hybrid architecture for optimal macOS compatibility
-- ✅ Auto-launcher system
-- ✅ Improved error handling and logging
-- ✅ Docker containerization for services
-- ✅ Real-time GUI notifications
+- 🌐 **Web-based GUI**: Modern browser interface replacing desktop notifications
+- 🔄 **WebSocket Integration**: Real-time updates without page refresh
+- 📱 **Responsive Design**: Works on desktop and mobile browsers
+- 🎨 **Dark Theme Interface**: Professional dark mode for better visibility
+- 📊 **Message History**: View last 100 detection events with timestamps
+- 🟢 **Connection Status**: Visual indicator of system health
+- ⚡ **Improved Performance**: Optimized web server with Flask-SocketIO
+
+### Previous Versions
+- ✅ v1.0.0: Hybrid architecture for optimal macOS compatibility
+- ✅ v1.0.0: Auto-launcher system
+- ✅ v1.0.0: Improved error handling and logging
+- ✅ v1.0.0: Docker containerization for services
 
 ## 🙏 Acknowledgments
 
 - **Ultralytics YOLO** for pose estimation
 - **OpenCV** for computer vision
+- **Flask & Flask-SocketIO** for web interface
 - **Docker** for containerization
 - **MySQL** for database storage
