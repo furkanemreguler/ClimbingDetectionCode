@@ -1,10 +1,25 @@
+# Deep Learning & Computer Vision
 torch>=2.0.0
 torchvision>=0.15.0
 ultralytics>=8.0.0
-opencv-python-headless>=4.8.0
+opencv-python>=4.8.0
 numpy>=1.24.0
+
+# Database
 mysql-connector-python>=8.0.0
+
+# Web Framework & Real-time Communication
 flask>=2.3.0
 flask-socketio>=5.3.0
+
+# HTTP Requests (climbing_client için)
+requests>=2.28.0
+
+# Image Processing
 Pillow>=9.0.0
+
+# System Monitoring
 psutil>=5.9.0
+
+# Threading & Async (eğer gerekirse)
+eventlet>=0.33.0
